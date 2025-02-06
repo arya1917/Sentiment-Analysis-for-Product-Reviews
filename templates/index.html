@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Sentiment Analysis</h1>
+        <form id="review-form">
+            <textarea name="review" placeholder="Enter your review here..." required></textarea>
+            <button type="submit">Analyze</button>
+        </form>
+        <h2>Result: <span id="result"></span></h2>
+        <div class="chart-container">
+            <canvas id="sentimentChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let sentimentChart; // Store chart instance
+
+        document.getElementById('review-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerText = data.sentiment;
+
+                let chartData = {
+                    labels: ['Positive', 'Negative', 'Neutral'],
+                    datasets: [{
+                        label: 'Sentiment Analysis',
+                        data: [data.probabilities.positive, data.probabilities.negative, data.probabilities.neutral],
+                        backgroundColor: ['#00ff00', '#ff0000', '#ffa500']
+                    }]
+                };
+
+                let ctx = document.getElementById('sentimentChart').getContext('2d');
+
+                // Destroy previous chart instance if exists
+                if (sentimentChart) {
+                    sentimentChart.destroy();
+                }
+
+                // Create new chart
+                sentimentChart = new Chart(ctx, { 
+                    type: 'pie', 
+                    data: chartData 
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
